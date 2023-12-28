@@ -1,0 +1,85 @@
+#!/usr/bin/bash
+shopt -s extglob
+export LC_COLLATE=C
+
+<<COMMENT
+	Function to check if the dir exitst "it will cd to it" or not 		"create the dir and cd to it"
+COMMENT
+
+function check_dir(){
+	
+	if [[ -d "$1" ]]
+	then
+		echo "Databases folder is found"
+	else
+		mkdir -p "$1"
+	fi
+
+}
+######################################################################
+check_dir $HOME/DBMS_Project/Databases
+cd $HOME/DBMS_Project/Databases
+######################################################################
+
+<< COMMENT
+	Function to check if the data base exists or not
+COMMENT
+
+function check_exist(){
+	
+	if [[ -e "$1"  ]]
+	then
+		echo "This database is already exist"
+	else
+		mkdir -p "$1"
+		echo "Database \"$1\" has been created successfully"
+	fi
+
+}
+######################################################################
+<< COMMENT
+	Function to check if the database name contain any symbols that may 
+	cause error in the run such as "\ , \` , () , $ , ..etc"
+COMMENT
+
+function check_symbols(){
+	chars="()[]\$;&''\"\n*:/"
+	for ((i = 0; i < ${#chars}; i++))
+	do
+		char="${chars:i:1}"
+		if [[ "$1" == *"$char"* ]] 
+		then
+			echo "This database name contains a special character "$char" that may cause an error. please choose a different name."
+		break
+		fi
+	done
+
+}
+
+######################################################################
+function createDB(){
+	read -p "Enter your database name : " dbname
+	case "$dbname" in
+    	*["()[]\$;&''\"\n*:/\\\`]"*) 
+	        echo "Error: Input contains forbidden characters"
+        	;;
+	*"\\"*) 
+	        echo "Error: Input contains forbidden characters"
+        	;;
+	@[_])
+		echo "Error: Database name can't be _ "
+		;;
+	[0-9]*)
+        	echo "You can't have a database strats with a number"
+        ;;
+	+([a-zA-Z0-9_]))
+	        check_exist "$dbname"
+	        #check_symbols "$dbname"
+	        ;;
+	    *)
+		echo "Error: Invalid input format."
+	esac
+
+}
+
+createDB
