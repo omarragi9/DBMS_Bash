@@ -1,0 +1,50 @@
+#!/usr/bin/bash
+source common_functions
+
+######################################################################
+check_dir $HOME/DBMS_Project/Databases
+cd $HOME/DBMS_Project/Databases
+######################################################################
+
+<< COMMENT
+	Function to check if the data base exists or not "Create it"
+COMMENT
+
+function check_exist_create(){
+	
+	if [[ -e "$1"  ]]
+	then
+		echo "This database is already exist"
+	else
+		mkdir -p "$1"
+		echo "Database \"$1\" has been created successfully"
+	fi
+
+}
+
+######################################################################
+function createDB(){
+	read -p "Enter your database name : " dbname
+	case "$dbname" in
+    	*["()[]\$;&''\"\n*:/\\\`]"*) 
+	        echo "Error: Input contains forbidden characters"
+        	;;
+	*"\\"*) 
+	        echo "Error: Input contains forbidden characters"
+        	;;
+	_*)
+		echo "Error: Database name can't start with _"
+		;;
+	[0-9]*)
+        	echo "You can't have a database strats with a number"
+        ;;
+	+([a-zA-Z0-9_]))
+	        check_exist_create "$dbname"
+	        ;;
+	    *)
+		echo "Error: Invalid input format."
+	esac
+
+}
+
+createDB

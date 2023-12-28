@@ -1,0 +1,24 @@
+#!/usr/bin/bash
+
+source common_functions
+check_dir $HOME/DBMS_Project/Project
+cd ../Databases
+######################################################################
+
+<< COMMENT
+	Function to check if the data base exists or not "Error"
+COMMENT
+
+function connectDB(){
+	read -p "Enter your database name from: " dbname
+	if [[ -d "$dbname"  ]]
+	then
+		cd $dbname
+		echo "You are now in the database "$dbname" "
+		#pwd
+	else
+		echo "This database is not found"
+	fi
+}
+
+connectDB

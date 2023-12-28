@@ -1,0 +1,56 @@
+#!/usr/bin/bash
+source connectDB
+dbname=$(connectDB)
+##################################################################
+<< COMMENT
+	Function to check the value of the primary key that the user enters if 		it's found in the table or not
+COMMENT
+
+function check_value(){
+	ids=`cut -d: -f1 test_data | tail -n+2`
+	for id in $ids
+	do
+		if (( id != $key ))
+		then
+			continue
+		else
+			echo "Found"
+			break
+		fi
+	done
+	
+}
+##################################################################
+function updateTB(){
+
+	columns=`cat test_meta`
+	echo "Which Value of these column you want to update : "
+	counter=0
+	for column in $columns
+	do
+		((counter++))
+ 		echo "$counter) $column"
+	done
+	read -p "Enter the number of column you want to update : " col_num
+	read -p "Enter the primary key that of the record you want to update : " key
+	check_value key
+	read -p "Enter the old value of the row number $key : " old_val
+	read -p "Enter the new value of the row number $key : " new_val
+
+	awk '
+		BEGIN{
+		FS=":"
+		}
+
+		{
+		old_val==new_val
+		}
+
+		END{
+		    $2="RobertSmith"
+		}
+	' test_data > test_data
+
+	cat test_data
+}
+updateTB
