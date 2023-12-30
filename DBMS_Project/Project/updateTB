@@ -1,7 +1,9 @@
 #!/usr/bin/bash
 shopt -s extglob
-source connectDB
-dbname=$(connectDB)
+#source connectDB
+#dbname=$(connectDB)
+cd $HOME/DBMS_Project/Databases/omar
+pwd
 ##################################################################
 << COMMENT
 	Function to check the value of the primary key that the user enters if it's found in the table or not
@@ -21,6 +23,21 @@ function check_value(){
 	done
 	
 }
+
+##################################################################
+<< COMMENT
+	Function to check if the name of the column entered by the user is in the table or not
+COMMENT
+
+function check_column(){
+	if head -n1 test_data | grep -q $1
+		then
+			return 1
+		else
+			return 2
+	fi
+
+}
 ##################################################################
 << COMMENT
 	Function to check if the value that is entered by the user is int or not "Error"
@@ -32,10 +49,10 @@ function check_int(){
 	do
 		case $i in
 			+([0-9]))
-				echo 1
+				return 1
 				;;
 			*)	
-				echo 0
+				return 2
 		esac
 	done
 
@@ -79,10 +96,9 @@ function check_table(){
 
 	if [[ -f $1 ]]
 	then 
-		echo "Found"
+		return 1
 	else
-		echo "Error!! Table not found"
-		exit
+		return 2
 	fi
 
 
@@ -93,32 +109,40 @@ function check_table(){
 	Function to get the tpyes of columns that the user choose from meta file
 COMMENT
 
-function types_of_meta() {
-    if [[ -f $1 ]]; then
-        declare -a output=()
-        awk -v col_num="$2" -v new_val="$3" '
-            BEGIN {
-                FS="="
-                split(col_num, arr, " ")
-                split(new_val, vals, " ")
-                arr_len = length(arr)
-            }
-            {
-                for (i in arr) {
-                    if (NR == arr[i]) {
-                        output[i] = $2
-                    }
+function types_of_meta()
+{
+    if [[ -f $1 ]]
+    then
+        awk -v val_tp="$2" -v col_num_arr="$3" '
+        BEGIN{
+            FS="="
+            n_val = split(val_tp, val_arr, "")
+            n_col = split(col_num_arr, col_arr, " ")
+		counter=1
+        }
+        {
+            for (i = 1; i <= n_col; i++) {
+                if (NR == col_arr[i]) {
+                    dtypes[counter] = $2
+		    counter++
                 }
             }
-            END {
-                for (i = 1; i <= arr_len; i++) {
-                    print output[i]
+        }
+        END{
+            for (i = 1; i <= n_val; i++) {
+		print val_arr[i] 
+		print dtypes[i]
+                if ((val_arr[i] == 1 && dtypes[i] == "int") || (val_arr[i] == 2 && dtypes[i] == "str")) {
+                    print "GOOD"
+                } else {
+                    print "Type Mismatch!!"
                 }
             }
+        }
         ' "$1"
     else
         echo "Meta data file not found!!"
-        exit 1
+        return 1
     fi
 }
 ##################################################################
@@ -138,28 +162,76 @@ function updateTB(){
 	
 	read -p "Enter the index of columns you want to update \"Separated by space\": " col_num
 	check_int $col_num
+	temp=$?
+	if (( temp == 2 ))
+	then
+		echo "you can't enter a string"
+	fi
 	read -p "Enter the primary key that of the record you want to update : " key
 	check_int $key
+	temp=$?
+	if (( temp == 2 ))
+	then
+		echo "you can't enter a string"
+	fi
 	check_value $key
 
-	declare -a old_val=() new_val=()
-	i=0
+	declare -a old_val=() new_val=() val_tp=()
 	counter=1
-	read -r -a col_array <<< "$col_num"
-	for i in ${!col_array[@]}
+	read -r -a col_num_arr <<< "$col_num" # Converting the string col_num into an array
+	for i in ${!col_num_arr[@]}
 	do
 		read -p "Enter the new value of the row number $counter : " new_val[$i]
-		t=$(check_int "${new_val[$i]}")
-		echo $t
-		echo ${new_val[$i]}
-		t1=$(check_int "${col_array[$i]}")
-		echo $t1
-		echo ${col_array[$i]}
-		#((i++))
+		check_int "${new_val[$i]}"	   # The return datatype of the new values 1 for int and 2 for str
+		val_tp+=$?
+		#echo "${new_val[$i]}"
+		#echo "${val_tp[$i]}"
 		((counter++))
 	done
-	types_of_meta test_meta "$col_num" "$new_val"
+	types_of_meta test_meta "${val_tp[*]}" "${col_num_arr[*]}"
 	substitute "$key" "${col_num[*]}" "${new_val[*]}" "$table"
 	
 }
-updateTB
+###########################################################################
+update_pattern="^update [a-zA-Z_]+ set [a-zA-Z_]+ = .+ where [a-zA-Z_]+ = .+$"
+user_input="$*"
+
+# Check the user update query syntax
+if [[ $user_input =~ $update_pattern ]]; then
+    echo "Valid update statement: $user_input"
+else
+    echo "Syntax error!!"
+fi
+
+# Check if the table entered by user is not found
+check_table $2
+temp=$? 		# temporary variable to check the return of the function
+
+if [[ $temp != 1 ]]
+then
+	echo "Error : table not found"
+fi
+
+
+columns=$(grep -oP '\b\w+\b(?=\s*=)' <<< "$user_input")		# Extract the columns that is in the query
+
+# Check if any of the columns is not found
+for column in $columns
+do
+	check_column $column
+	temp=$?   	# temporary variable to check the return of the function
+	if [[ $temp != 1 ]]
+	then
+		echo "Column "$column" not found"
+	fi
+done
+
+
+values=$(echo "$user_input" | grep -oP '\b\d+\b')		# Extract the values that is in the query
+echo "$values"
+
+
+
+updateTB 
+
+

@@ -10,15 +10,15 @@ cd ../Databases
 COMMENT
 
 function connectDB(){
-	read -p "Enter your database name from: " dbname
-	if [[ -d "$dbname"  ]]
+	#read -p "Enter your database name from: " dbname
+	if [[ -d "$1"  ]]
 	then
-		cd $dbname
-		echo "You are now in the database "$dbname" "
+		cd $1
+		echo "You are now in the database "$1" "
 		#pwd
 	else
 		echo "This database is not found"
 	fi
 }
 
-connectDB
+connectDB $1

@@ -24,8 +24,8 @@ function check_exist_create(){
 
 ######################################################################
 function createDB(){
-	read -p "Enter your database name : " dbname
-	case "$dbname" in
+	#read -p "Enter your database name : " dbname
+	case "$1" in
     	*["()[]\$;&''\"\n*:/\\\`]"*) 
 	        echo "Error: Input contains forbidden characters"
         	;;
@@ -39,7 +39,7 @@ function createDB(){
         	echo "You can't have a database strats with a number"
         ;;
 	+([a-zA-Z0-9_]))
-	        check_exist_create "$dbname"
+	        check_exist_create "$1"
 	        ;;
 	    *)
 		echo "Error: Invalid input format."
@@ -47,4 +47,4 @@ function createDB(){
 
 }
 
-createDB
+createDB $1
