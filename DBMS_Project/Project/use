@@ -1,0 +1,11 @@
+#! /usr/bin/bash
+if [[ $# -eq 0 ]];
+then 
+echo "Syntax Error, Use Function Must Take One Argument Representng Your Database !! "
+elif [[ $# -gt 1 ]];
+then 
+echo "Syntax Error, Use Function Takes Only One Argument !! "
+else
+export DB=$1
+echo "You are Using $1 Database"
+fi
