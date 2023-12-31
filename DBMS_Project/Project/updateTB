@@ -30,7 +30,7 @@ function check_value(){
 COMMENT
 
 function check_column(){
-	if head -n1 test_data | grep -q $1
+	if head -n1 "$2"_data | grep -q $1
 		then
 			return 1
 		else
@@ -94,7 +94,7 @@ COMMENT
 
 function check_table(){
 
-	if [[ -f $1 ]]
+	if [[ -f "$1"_data ]]
 	then 
 		return 1
 	else
@@ -130,12 +130,12 @@ function types_of_meta()
         }
         END{
             for (i = 1; i <= n_val; i++) {
-		print val_arr[i] 
-		print dtypes[i]
+		#print val_arr[i] 
+		#print dtypes[i]
                 if ((val_arr[i] == 1 && dtypes[i] == "int") || (val_arr[i] == 2 && dtypes[i] == "str")) {
-                    print "GOOD"
+                    #print "GOOD"
                 } else {
-                    print "Type Mismatch!!"
+                    print "Error. Data type Mismatch!! in column " $dtypes[i]
                 }
             }
         }
@@ -218,17 +218,46 @@ columns=$(grep -oP '\b\w+\b(?=\s*=)' <<< "$user_input")		# Extract the columns t
 # Check if any of the columns is not found
 for column in $columns
 do
-	check_column $column
+	check_column $column $2
 	temp=$?   	# temporary variable to check the return of the function
 	if [[ $temp != 1 ]]
 	then
-		echo "Column "$column" not found"
+		echo "Error!! Column "$column" not found"
 	fi
 done
 
 
-values=$(echo "$user_input" | grep -oP '\b\d+\b')		# Extract the values that is in the query
-echo "$values"
+values=$(echo "$user_input" | grep -oP '(?<=\=\s)[\w\d]+' )		# Extract the values that is in the query
+#echo "$values"
+declare -a val_types=()
+for val in $values
+do
+	check_int $val	   # The return datatype of the new values 1 for int and 2 for str
+	val_types+=$?
+done
+
+
+index=$(head -n1 "${2}_data" | awk -F':' '{for(i=1;i<=NF;i++) print i " " $i}')
+#echo $index
+
+i=2
+declare -a out=()
+for idx in $index
+do
+	#echo "index : " $idx
+	for col in $columns
+	do
+		#echo "column : " $col
+		if [[ $col == $idx ]]
+		then
+			#echo $((i/2))
+			out+=($((i/2)))
+		fi
+	done
+	((i++))
+done
+
+types_of_meta "$2"_meta "${val_types[*]}" "${out[*]}" #Check if the data types of entered values matches the data types in the meta file
 
 
 
