@@ -3,7 +3,7 @@ shopt -s extglob
 export LC_COLLATE=C
 
 <<COMMENT
-	Function to check if the dir exitst "it will cd to it" or not 		"create the dir and cd to it"
+	Function to check if the dir exitst "it will cd to it" or not "create the dir and cd to it"
 COMMENT
 
 function check_dir(){
@@ -17,3 +17,35 @@ function check_dir(){
 
 }
 ##########################################################################
+
+
+<< COMMENT
+	Function to check if this table is exist
+COMMENT
+
+function check_table(){
+
+	if [[ -f "$1"_data ]]
+	then 
+		return 1
+	else
+		return 2
+	fi
+
+
+}
+
+##################################################################
+<< COMMENT
+	Function to check if the name of the column entered by the user is in the table or not
+COMMENT
+
+function check_column(){
+	if head -n1 "$2"_data | grep -q $1
+		then
+			return 1
+		else
+			return 2
+	fi
+
+}

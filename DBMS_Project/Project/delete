@@ -1,0 +1,75 @@
+#!/usr/bin/bash
+shopt -s extglob
+source common_functions
+cd $HOME/DBMS_Project/Databases/omar
+##############################################################
+delete_pattern="^delete\s+from\s+[a-zA-Z_]+\s+where [a-zA-Z_]+ = .+$"
+user_input="$*"                 # The query entered by the user all in one line
+
+# Check the user update query syntax
+if [[ $user_input =~ $delete_pattern ]]; then
+    echo "Valid delete statement: $user_input"
+else
+    echo "Syntax error!!"
+fi
+
+# Check if the table entered by user is not found
+check_table $3
+temp=$? 		# temporary variable to check the return of the function
+
+if [[ $temp != 1 ]]
+then
+	echo "Error : table not found"
+fi
+
+check_column $5 $3
+temp=$?   	# temporary variable to check the return of the function
+if [[ $temp != 1 ]]
+then
+	echo "Error!! Column "$column" not found"
+fi
+
+
+row=$(cat "$3"_data | head -n1)  # Extract the first row
+num_columns=$(echo "$row" | awk -F':' '{print NF}')
+
+echo "Number of columns: $num_columns"
+
+last_argument="${!#}"
+
+# Use the extracted last argument
+#echo "Last argument: $last_argument"
+
+awk -v key="$last_argument" '
+	BEGIN{
+	print "start"
+	FS=":"
+	}
+	{	
+		if ($1 == key){
+			 gsub($0,"")
+		}
+		print $0
+	}
+	END{
+	print "End"
+	}
+
+' "$3"_data
+
+
+#cat "$3"_data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
