@@ -64,24 +64,39 @@ function check_int(){
 COMMENT
 
 function substitute(){
-	awk -v key_col="$1" -v cols="$2" -v new_vals="$3" key_value="$5" '
+	awk -v columns="$1" -v cols="$2" -v values="$3" -v key_value="$5" '
         BEGIN {
             FS=":"
-        }
+	    # Convert 'columns' string into an array
+	    num_columns = split(columns, columns_array, " ")
 
+	    # Convert 'values' string into an array
+	    num_values = split(values, values_array, " ")
+
+	    }
+        
         {
-            if ($key_col == key_value) {
-                split(cols, indices, " ")
-                split(new_vals, values, " ")
-                for (i = 1; i <= length(indices); i++) {
-                    if (i in indices) {
-                        $(indices[i]) = values[i]
-                    }
-                }
-            }
+######################### get the index of each column of the users query#######################
+	if (NR == 1){
+	        split($0, header, ":")
+		for (i = 1; i <= num_columns; i++) {
+	        for (j = 1; j <= NF; j++) {
+        		if (columns_array[i] == header[j]) {
+				output[i] = j
+			break
+	       }
+	       }
+	       }
+	}
+################################################################################################
+	if ($output[j] == values_array[num_values]){
+		for (i = 1; i <= num_columns - 1 ; i++){
+			$output[i] = values_array[i]
+		}
+	}
+	gsub(" " , ":")
+	print $0
             
-            gsub(" ", ":")
-            print $0
         }
     ' "$4"
 }
@@ -175,7 +190,7 @@ function types_of_meta()
 	done
 
 
-	index=$(head -n1 "${2}_data" | awk -F':' '{for(i=1;i<=NF;i++) print i " " $i}')
+	index=$(head -n1 "${2}_data" | awk -F':' '{for(i=1;i<=NF;i++) print i " : " $i}')
 	#echo $index
 
 	i=2
@@ -195,12 +210,14 @@ function types_of_meta()
 		((i++))
 	done
 	
-	echo "${index[*]}"
-	echo "${columns[*]}"
-	echo "${out[*]}"
-	#types_of_meta "$2"_meta "${val_types[*]}" "${out[*]}" #Check if the data types of entered values matches the data types in the meta file 
+	#echo "${index[*]}"
+	#echo "${columns[*]}"
+	#echo "${out[*]}"
 	
-	#substitute "${out[-1]}" "${out[*]}" "${values[*]}" "$2"_data "${values[-1]}"
+	types_of_meta "$2"_meta "${val_types[*]}" "${out[*]}" #Check if the data types of entered values matches the data types in the meta file 
+	
+	substitute "${columns[*]}" "${out[*]}" "${values[*]}" "$2"_data 2
+
 	
 ###########################################################################
 
