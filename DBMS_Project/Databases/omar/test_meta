@@ -1,4 +1,4 @@
-id=int
-name=str
-age=int
-city=str
+ID=int
+Name=str
+Age=int
+City=str

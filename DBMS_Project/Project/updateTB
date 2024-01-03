@@ -60,11 +60,63 @@ function check_int(){
 
 ##################################################################
 << COMMENT
+	Function to get the primary key column name
+COMMENT
+
+function get_pk(){
+
+	pk=$(head -n1 $1 | cut -d: -f1)
+	declare -a pk_col_arr=()
+	declare -a pk_val_arr=()
+	#echo $pk
+	## convert columns into an array 
+	for col in $2
+	do
+		pk_col_arr+=("$col")
+	done
+	## Convert values into an array
+	for col in $3
+	do
+		pk_val_arr+=("$col")
+	done
+	len=${#pk_col_arr[@]}  # Get the length of the array
+
+	for ((i = 0; i < len - 1; i++))
+	do
+		#echo "col : " "${pk_col_arr[i]}"
+		#echo "val : " "${pk_val_arr[i]}"
+		if [[ "${pk_col_arr[i]}" == $pk ]]
+		then
+			#echo "${pk_col_arr[i]}"
+			#echo $i
+			awk -v value="${pk_val_arr[i]}" '
+			BEGIN{
+				FS=":"
+			}
+			{
+				if (value == $1){
+					print "Error. This primary key is already exists!!"
+					exit 1
+				}
+			}
+
+			' $1
+			local awk_return=$?  # Capture the exit status of the awk command
+		        if [[ $awk_return == 1 ]]
+			then
+        		    return $awk_return  # Return the exit status if non-zero
+        		fi
+		fi
+	done
+}
+
+##################################################################
+<< COMMENT
 	Function that update the table to the new value
 COMMENT
 
 function substitute(){
-	awk -v columns="$1" -v cols="$2" -v values="$3" -v key_value="$5" '
+	awk -v columns="$1" -v values="$2" '
         BEGIN {
             FS=":"
 	    # Convert 'columns' string into an array
@@ -98,45 +150,66 @@ function substitute(){
 	print $0
             
         }
-    ' "$4"
+    ' "$3"
 }
 
 
 ##################################################################
 
 << COMMENT
-	Function to get the tpyes of columns that the user choose from meta file
+	A code to get the data types of all columns of the table from meta file
+COMMENT
+
+col_dtype=$(awk '
+	    BEGIN{
+		FS="="
+	    }
+	    {
+		if ($2 =="int"){
+		    col_dtype[NR] = 1
+		    col_index[NR] = NR
+		}
+		else{
+		    col_dtype[NR] = 2
+	col_index[NR] = NR
+		}
+	    }
+	    END{
+	    }
+' "$2"_meta)
+
+
+##################################################################
+<< COMMENT
+	Function to compare the column types with the types of values entered by the user
 COMMENT
 
 function types_of_meta()
 {
     if [[ -f $1 ]]
     then
-        awk -v val_tp="$2" -v col_num_arr="$3" '
+        awk -v val_types="$2" -v columns="$3" '
         BEGIN{
             FS="="
-            n_val = split(val_tp, val_arr, "")
-            n_col = split(col_num_arr, col_arr, " ")
-		counter=1
+            n_val = split(val_types, val_arr, "")
+            n_col = split(columns, col_arr, " ")
         }
         {
-            for (i = 1; i <= n_col; i++) {
-                if (NR == col_arr[i]) {
-                    dtypes[counter] = $2
-		    counter++
+            for(i=1;i<=n_col;i++){
+                if (col_arr[i] == $1){
+                    if (val_arr[i] == 1 && $2 == "int") {
+                        #print "Column " $1 " is of type int"
+                    } else if (val_arr[i] == 2 && $2 == "str") {
+                        #print "Column " $1 " is of type string"
+                    } else {
+                        print "Error. Column " $1 " doesnt match expected type!!"
+			exit 1
+                    }
                 }
             }
         }
         END{
-            for (i = 1; i <= n_val; i++) {
-		#print val_arr[i] 
-		#print dtypes[i]
-                if ((val_arr[i] == 1 && dtypes[i] == "int") || (val_arr[i] == 2 && dtypes[i] == "str")) {
-                    #print "GOOD"
-                } else {
-                    print "Error. Data type Mismatch!! in column " $dtypes[i]
-                }
-            }
+            
         }
         ' "$1"
     else
@@ -144,79 +217,90 @@ function types_of_meta()
         return 1
     fi
 }
-##################################################################
-		
-	update_pattern="^update [a-zA-Z_]+ set [a-zA-Z_]+ = .+ where [a-zA-Z_]+ = .+$"
-	user_input="$*"                 # The query entered by the user all in one line
+##################################################################	
+update_pattern="^update [a-zA-Z_]+ set [a-zA-Z_]+ = .+ where [a-zA-Z_]+ = .+$"
+user_input="$*"                 # The query entered by the user all in one line
 
 	# Check the user update query syntax
-	if [[ $user_input =~ $update_pattern ]]; then
-	    echo "Valid update statement: $user_input"
-	else
-	    echo "Syntax error!!"
-	fi
+if [[ $user_input =~ $update_pattern ]]; then
+    echo "Valid update statement: $user_input"
+else
+    echo "Syntax error!!"
+    exit	
+fi
 
-	# Check if the table entered by user is not found
-	check_table $2
-	temp=$? 		# temporary variable to check the return of the function
+# Check if the table entered by user is not found
+check_table $2
+temp=$? 		# temporary variable to check the return of the function
 
+if [[ $temp != 1 ]]
+then
+	echo "Error : table not found"
+fi
+
+columns=$(grep -oP '\b\w+\b(?=\s*=)' <<< "$user_input")		# Extract the columns that is in the query
+
+# Check if any of the columns is not found
+for column in $columns
+do
+	check_column $column $2
+	temp=$?   	# temporary variable to check the return of the function
 	if [[ $temp != 1 ]]
 	then
-		echo "Error : table not found"
+		echo "Error!! Column "$column" not found"
 	fi
+done
 
+values=$(echo "$user_input" | grep -oP '(?<=\=\s)[\w\d]+' )		# Extract the values that is in the query
+#echo "$values"
+declare -a val_types=()
+for val in $values
+do
+	check_int $val	   # The return datatype of the new values 1 for int and 2 for str
+	val_types+=$?
+done
 
-	columns=$(grep -oP '\b\w+\b(?=\s*=)' <<< "$user_input")		# Extract the columns that is in the query
+index=$(head -n1 "${2}_data" | awk -F':' '{for(i=1;i<=NF;i++) print i " : " $i}')
+#echo $index
 
-	# Check if any of the columns is not found
-	for column in $columns
+i=2
+declare -a out=()
+for idx in $index
+do
+	#echo "index : " $idx
+	for col in $columns
 	do
-		check_column $column $2
-		temp=$?   	# temporary variable to check the return of the function
-		if [[ $temp != 1 ]]
+		#echo "column : " $col
+		if [[ $col == $idx ]]
 		then
-			echo "Error!! Column "$column" not found"
+			#echo $((i/2))
+			out+=($((i/2)))
 		fi
 	done
-
-
-	values=$(echo "$user_input" | grep -oP '(?<=\=\s)[\w\d]+' )		# Extract the values that is in the query
-	#echo "$values"
-	declare -a val_types=()
-	for val in $values
-	do
-		check_int $val	   # The return datatype of the new values 1 for int and 2 for str
-		val_types+=$?
-	done
-
-
-	index=$(head -n1 "${2}_data" | awk -F':' '{for(i=1;i<=NF;i++) print i " : " $i}')
-	#echo $index
-
-	i=2
-	declare -a out=()
-	for idx in $index
-	do
-		#echo "index : " $idx
-		for col in $columns
-		do
-			#echo "column : " $col
-			if [[ $col == $idx ]]
-			then
-				#echo $((i/2))
-				out+=($((i/2)))
-			fi
-		done
-		((i++))
-	done
+	((i++))
+done
 	
-	#echo "${index[*]}"
-	#echo "${columns[*]}"
-	#echo "${out[*]}"
-	
-	types_of_meta "$2"_meta "${val_types[*]}" "${out[*]}" #Check if the data types of entered values matches the data types in the meta file 
-	
-	substitute "${columns[*]}" "${out[*]}" "${values[*]}" "$2"_data 2
+#echo "${index[*]}"
+#echo "${columns[*]}"
+#echo "${out[*]}"
+
+types_of_meta "$2"_meta "${val_types[*]}" "${columns[*]}" #Check if the data types of entered values matches the data types in the meta file 
+
+res_meta=$?			# A flag to check the return of the types of meta function
+if [[ $res_meta == 1 ]]
+then
+	exit		# There is a data type mismatch
+fi
+
+get_pk "$2"_data "${columns[*]}" "${values[*]}" 
+res_pk=$?			# A flag to check the return of the types of meta function
+if [[ $res_pk == 1 ]]
+then
+	exit		# There is a data type mismatch
+fi
+
+
+substitute "${columns[*]}" "${values[*]}" "$2"_data
 
 	
 ###########################################################################
