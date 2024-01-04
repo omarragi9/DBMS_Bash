@@ -128,7 +128,7 @@ function substitute(){
 	    }
         
         {
-######################### get the index of each column of the users query#######################
+######################### get the index of each column of the users query #######################
 	if (NR == 1){
 	        split($0, header, ":")
 		for (i = 1; i <= num_columns; i++) {
@@ -140,8 +140,10 @@ function substitute(){
 	       }
 	       }
 	}
-################################################################################################
-	if ($output[j] == values_array[num_values]){
+#################################################################################################
+	len = length(output)
+	#print len
+	if ($output[len] == values_array[num_values]){
 		for (i = 1; i <= num_columns - 1 ; i++){
 			$output[i] = values_array[i]
 		}
@@ -236,6 +238,7 @@ temp=$? 		# temporary variable to check the return of the function
 if [[ $temp != 1 ]]
 then
 	echo "Error : table not found"
+	exit
 fi
 
 columns=$(grep -oP '\b\w+\b(?=\s*=)' <<< "$user_input")		# Extract the columns that is in the query
@@ -248,6 +251,7 @@ do
 	if [[ $temp != 1 ]]
 	then
 		echo "Error!! Column "$column" not found"
+		exit
 	fi
 done
 
@@ -293,10 +297,10 @@ then
 fi
 
 get_pk "$2"_data "${columns[*]}" "${values[*]}" 
-res_pk=$?			# A flag to check the return of the types of meta function
+res_pk=$?			# A flag to check the return of the pk search function
 if [[ $res_pk == 1 ]]
 then
-	exit		# There is a data type mismatch
+	exit		# The updated value is already a primark key in the table
 fi
 
 
