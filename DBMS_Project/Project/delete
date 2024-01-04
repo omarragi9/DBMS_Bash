@@ -2,60 +2,71 @@
 shopt -s extglob
 source common_functions
 cd $HOME/DBMS_Project/Databases/omar
-##############################################################
-delete_pattern="^delete\s+from\s+[a-zA-Z_]+\s+where [a-zA-Z_]+ = .+$"
-user_input="$*"                 # The query entered by the user all in one line
+#######################################################################################
+<< COMMENT
+	Function to delte all rows "leave the table empty"
+COMMENT
 
-# Check the user update query syntax
-if [[ $user_input =~ $delete_pattern ]]; then
-    echo "Valid delete statement: $user_input"
-else
-    echo "Syntax error!!"
-fi
+function delete_all(){
 
-# Check if the table entered by user is not found
-check_table $3
-temp=$? 		# temporary variable to check the return of the function
+	# Check if the table entered by user is not found
+	check_table $1
+	temp=$? 		# temporary variable to check the return of the function
 
-if [[ $temp != 1 ]]
-then
-	echo "Error : table not found"
-fi
+	if [[ $temp != 1 ]]
+	then
+		echo "Error : table not found"
+		exit
+	fi
 
-check_column $5 $3
-temp=$?   	# temporary variable to check the return of the function
-if [[ $temp != 1 ]]
-then
-	echo "Error!! Column "$column" not found"
-fi
-
-
-row=$(cat "$3"_data | head -n1)  # Extract the first row
-num_columns=$(echo "$row" | awk -F':' '{print NF}')
-
-echo "Number of columns: $num_columns"
-
-last_argument="${!#}"
-
-# Use the extracted last argument
-#echo "Last argument: $last_argument"
-
-awk -v key="$last_argument" '
-	BEGIN{
-	print "start"
-	FS=":"
-	}
-	{	
-		if ($1 == key){
-			 gsub($0,"")
+	awk '
+		BEGIN{
+		FS=":"
 		}
-		print $0
-	}
-	END{
-	print "End"
-	}
+		{	
+			if (NR != 1){
+				gsub($0,"")
+			}
+			print $0
+		}
+		END{
+		}
 
-' "$3"_data
+	' "$1"_data
+
+}
+
+#######################################################################################
+
+delete_pattern="^delete\s+from\s+[a-zA-Z_]+\s+where [a-zA-Z_]+ = .+$"
+delete_all_pattern="^delete\s+all\s+from\s+[a-zA-Z_]+$"
+user_input="$*"                 # The query entered by the user all in one line
+query_flag=0			# A flag to know if it's a delete or delete all
+# Check the user update query syntax
+if [[ $user_input =~ $delete_pattern ]] 
+then
+	echo "Valid delete statement: $user_input"
+	query_flag=0
+	column=$(echo "$user_input" | grep -oP 'where\s+\K[a-zA-Z_]+(?=\s*=)') # to extract the column name from the query
+elif [[ $user_input =~ $delete_all_pattern ]]
+then
+	echo "Valid delete all statement: $user_input"
+	query_flag=1
+else
+	echo "Syntax error!!"
+	exit
+fi
+
+last_argument="${!#}"		# The value that is entered by the user
+
+
+if [[ $query_flag == 0 ]]
+then
+	delete_row $3 $5 $last_argument $column
+else
+	delete_all $4
+fi
+
 
 
 #cat "$3"_data
