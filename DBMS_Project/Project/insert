@@ -1,0 +1,226 @@
+#! /usr/bin/bash
+
+if [[ $1 = "into" ]];
+then
+	if [[ $2 != "" ]];
+	then
+	
+		if [[ $DB != "" ]];
+		then
+
+			if [[ -e $HOME/$DB ]];
+			then
+		
+				if [[ -e $HOME/$DB/$2 ]];
+				then
+
+				if [[ $# > 3  ]];
+				then
+				if [[ "${@:3:$#}" =~ "values" ]];
+				then
+
+					declare -a columns
+					declare -a values
+					declare -a heading
+					
+					heading=`head -1 $HOME/$DB/$2`
+					IFS=',' read -ra header <<< $heading
+
+					for c in "${@:3:$#}";
+					do
+						if [[ $c != "values" ]];
+						then
+							columns+=($c)
+						else
+							break
+						fi
+					done
+					
+					
+					for v in "${@:$((${#columns[@]} + 4)):$#}"
+					do
+					values+=($v)
+					done
+
+					
+					if [[ ${#columns[@]} = ${#values[@]} ]];
+					then
+				
+
+					for r in "${columns[@]}"; do
+    					found=true
+   						for h in "${header[@]}"; do
+       						if [[ $r == $h ]]; then
+          					  found=true
+						break
+          					else
+						found=false
+						
+       						fi
+    						done
+
+
+						if [[ $found = false ]];
+						then
+						break
+						fi
+					done
+
+						if $found; then
+       						 
+							declare duplicatefound=false
+							declare -A columnCheck
+
+							for ind in "${columns[@]}"; 
+							do
+   						 		if [[ -n ${columnCheck[$ind]} ]]; 
+								then
+									duplicatefound=true
+        								break  
+    								else
+        							columnCheck[$ind]=1  # Mark this column as seen
+    								fi
+							done
+							
+
+							if [[ $duplicatefound = false ]];
+							then
+								
+						
+									declare -A inputval
+									declare -A metadata
+									declare -A pk_values  # To store existing primary key values for uniqueness check
+									declare -a output     # Array to store output values
+
+									# Set the file paths
+									data_file="$HOME/$DB/$2"   # Data file
+									meta_file="$HOME/$DB/$2-meta"  # Metadata file
+
+									# Initialize inputval with null
+									for va in "${header[@]}"; 
+									do
+									    inputval[$va]="null"
+									done
+
+									# Populate inputval with actual values
+									for i in "${!columns[@]}"; 
+									do
+									    inputval[${columns[$i]}]=${values[$i]}
+									done
+
+									# Read metadata and store in an associative array
+									while IFS=' : ' read -r field type; 
+									do
+									    metadata[$field]=$type
+									done < "$meta_file"
+
+									# Check data types and constraints
+									checktypes=true
+									for i in "${!header[@]}"; 
+									do
+									    field="${header[$i]}"
+									    value="${inputval[$field]}"
+									    type="${metadata[$field]}"
+
+									    # Check for integer type
+									    if [[ $type == "int" || $type == "int-PK" ]]; 
+									    then
+										if [[ $value != "null" && ! $value =~ ^[0-9]+$ ]]; 
+										then
+										    echo "Error: Field '$field' requires an integer value or null."
+										    checktypes=false
+										    break
+										fi
+									    fi
+
+									    # Add output value for this field
+									    output+=("$value")
+									done
+
+									# Exit if type check fails
+									if ! $checktypes; 
+									then
+									    echo "Input validation failed."
+									    exit 1
+									fi
+
+									# Read existing PK values if field is a primary key
+									while IFS=',' read -ra line; 
+									do
+									    for i in "${!header[@]}"; 
+										do
+										field="${header[$i]}"
+										type="${metadata[$field]}"
+										if [[ $type == "int-PK" ]]; 
+										then
+										    pk_value="${line[$i]}"
+										    pk_values["$pk_value"]=1
+										fi
+									    	done
+									done < "$data_file"
+
+									# Check for uniqueness and non-null in primary key fields
+									for field in "${header[@]}"; 
+									do
+									    type="${metadata[$field]}"
+									    value="${inputval[$field]}"
+
+									    if [[ $type == "int-PK" ]]; 
+									    then
+										if [[ -z $value || $value == "null" ]]; 
+										then
+										    echo "Error: Primary key field '$field' cannot be null."
+										    exit 1
+										elif [[ -n ${pk_values[$value]} ]]; 
+										then
+										    echo "Error: Duplicate primary key value '$value' in field '$field'."
+										    exit 1
+										fi
+									    fi
+									done
+
+									# Output result
+									IFS=','; echo "${output[*]}" >> $HOME/$DB/$2
+									echo "Formatted Output: ${output[*]}"
+						
+							
+							
+							else
+							echo "Error: Duplicate Column Names are Not Allowed. Each Column Name Must be Unique."
+							fi
+						
+    						else
+       						 echo "The Input Column $r does not exist in Your $2 Table Columns"
+   						 fi
+					
+	
+					else 
+					echo "Error, Columns Size and Values Size Not Equal To Each Other. "
+					fi
+
+
+				else 
+				echo "Syntax Error: Unexpected token. 'values' keyword missing."
+				fi			
+				else 
+				echo "Syntax Error, Missing Columns Names"
+				fi
+				else
+				echo "Error, There is no Table Named $2 Exists. "
+				fi
+			else 
+			echo "There is No Database called $DB "
+			fi
+
+		else
+		echo "Error, There is No Database Selected"
+		fi	
+
+
+	else 
+	echo "Syntax Error: Insert Command Must Take Table Name as an Argument. "
+	fi
+
+else
+echo "Syntax Error: Unexpected token. 'into' keyword missing. " 
+fi
