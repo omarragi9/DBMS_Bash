@@ -17,10 +17,8 @@ function check_dir(){
 
 }
 ##########################################################################
-
-
 << COMMENT
-	Function to check if this table is exist
+	Function to check if this table exists or not
 COMMENT
 
 function check_table(){

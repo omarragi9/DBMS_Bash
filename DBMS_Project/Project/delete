@@ -4,7 +4,7 @@ source common_functions
 cd $HOME/DBMS_Project/Databases/omar
 #######################################################################################
 << COMMENT
-	Function to delte all rows "leave the table empty"
+	Function to delte all rows "leave the table empty" except the columns names
 COMMENT
 
 function delete_all(){
@@ -19,25 +19,71 @@ function delete_all(){
 		exit
 	fi
 
-	awk '
+	sed -i '1!d' "$1"_data
+
+}
+
+
+#######################################################################################
+<< COMMENT
+	Function to delete specific row "Based on the condition in the query"
+COMMENT
+
+function delete_row(){
+
+	# Check if the table entered by user is not found
+	check_table $1
+	temp=$? 		# temporary variable to check the return of the function
+	
+	if [[ $temp != 1 ]]
+	then
+		echo "Error : table not found"
+		exit
+	fi
+
+	row=$(awk -v column=$column -v key=$last_argument '
 		BEGIN{
-		FS=":"
+			FS=":"
+			res=0		# The index of the column that is in the condition
+			row=0		# The row number that will be deleted
 		}
-		{	
-			if (NR != 1){
-				gsub($0,"")
+		{
+			if(NR==1){
+				for(i=1;i<=NF;i++){
+					if(column==$i){
+						res=i
+					}
+					
+				}
+			}else
+			{
+				if($res==key){
+					row=NR
+					exit			# To allow delete of the first match only "If this line is deleted the code will delete the last match"
+				}
 			}
-			print $0
-		}
-		END{
+			#print $0
 		}
 
-	' "$1"_data
+		END{
+			printf "%d", row
+		}
+		
+
+	'  "$1"_data)
+	
+	# "To check if the row value dosen't change so no record was found"
+	if [[ $row == 0 ]]
+	then
+		echo "There are no records in the database that match this condition."
+	else
+		sed -i "${row}d" "$1"_data
+		echo "1 row deleted successfully"
+	fi
 
 }
 
 #######################################################################################
-
 delete_pattern="^delete\s+from\s+[a-zA-Z_]+\s+where [a-zA-Z_]+ = .+$"
 delete_all_pattern="^delete\s+all\s+from\s+[a-zA-Z_]+$"
 user_input="$*"                 # The query entered by the user all in one line
@@ -47,7 +93,7 @@ if [[ $user_input =~ $delete_pattern ]]
 then
 	echo "Valid delete statement: $user_input"
 	query_flag=0
-	column=$(echo "$user_input" | grep -oP 'where\s+\K[a-zA-Z_]+(?=\s*=)') # to extract the column name from the query
+	column=$(echo "$user_input" | grep -oP 'where\s+\K[a-zA-Z_]+(?=\s*=)') # to extract the column name of the condition from the query 
 elif [[ $user_input =~ $delete_all_pattern ]]
 then
 	echo "Valid delete all statement: $user_input"
@@ -57,7 +103,7 @@ else
 	exit
 fi
 
-last_argument="${!#}"		# The value that is entered by the user
+last_argument="${!#}"		# The value of the condition that is entered by the user.
 
 
 if [[ $query_flag == 0 ]]

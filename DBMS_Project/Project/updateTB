@@ -37,7 +37,6 @@ function check_value(){
 	
 }
 
-
 ##################################################################
 << COMMENT
 	Function to check if the value that is entered by the user is int or not "Error"
@@ -80,7 +79,8 @@ function get_pk(){
 		pk_val_arr+=("$col")
 	done
 	len=${#pk_col_arr[@]}  # Get the length of the array
-
+	
+	# To loop over all columns in the query except the one that is in the where condition "Avoids error that happen when the user use the PK in the update query and in the where condition"
 	for ((i = 0; i < len - 1; i++))
 	do
 		#echo "col : " "${pk_col_arr[i]}"
@@ -112,7 +112,7 @@ function get_pk(){
 
 ##################################################################
 << COMMENT
-	Function that update the table to the new value
+	Function that update the row to the new values
 COMMENT
 
 function substitute(){
@@ -124,7 +124,9 @@ function substitute(){
 
 	    # Convert 'values' string into an array
 	    num_values = split(values, values_array, " ")
-
+		
+	    # A flag to check if the update done successfully
+	    num_up = 0
 	    }
         
         {
@@ -144,44 +146,29 @@ function substitute(){
 	len = length(output)
 	#print len
 	if ($output[len] == values_array[num_values]){
+		# Loop until the no num_columns - 1 to aviod the last column which is used in the condition
 		for (i = 1; i <= num_columns - 1 ; i++){
 			$output[i] = values_array[i]
+			num_up = 1		# flag to check if there the update done successfully
 		}
 	}
 	gsub(" " , ":")
 	print $0
-            
+   
         }
-    ' "$3"
-}
-
-
-##################################################################
-
-<< COMMENT
-	A code to get the data types of all columns of the table from meta file
-COMMENT
-
-col_dtype=$(awk '
-	    BEGIN{
-		FS="="
-	    }
-	    {
-		if ($2 =="int"){
-		    col_dtype[NR] = 1
-		    col_index[NR] = NR
+	END{
+		if(num_up == 0){
+			 print "No records updated. Check your query!!" > "/dev/stderr"
 		}
 		else{
-		    col_dtype[NR] = 2
-	col_index[NR] = NR
+			print "1 Row updated successfully" > "/dev/stderr"
 		}
-	    }
-	    END{
-	    }
-' "$2"_meta)
+	}
+    ' "$3" > temp_file && mv temp_file "$3" # Redirect the output to a temp file and then to the table file to overwrite the old values with the new ones
+}
 
+######################################################################################################
 
-##################################################################
 << COMMENT
 	Function to compare the column types with the types of values entered by the user
 COMMENT
@@ -266,24 +253,6 @@ done
 
 index=$(head -n1 "${2}_data" | awk -F':' '{for(i=1;i<=NF;i++) print i " : " $i}')
 #echo $index
-
-i=2
-declare -a out=()
-for idx in $index
-do
-	#echo "index : " $idx
-	for col in $columns
-	do
-		#echo "column : " $col
-		if [[ $col == $idx ]]
-		then
-			#echo $((i/2))
-			out+=($((i/2)))
-		fi
-	done
-	((i++))
-done
-	
 #echo "${index[*]}"
 #echo "${columns[*]}"
 #echo "${out[*]}"
