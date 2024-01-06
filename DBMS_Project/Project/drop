@@ -1,0 +1,67 @@
+#! /usr/bin/bash
+
+if [[ -n $1 ]];
+then
+
+	if [[ -n $DB ]];
+	then
+
+	if [[ -n $2 ]];
+	then
+
+		if [[ $2 == $DB ]];
+		then
+
+		if [[ -d $HOME/$DB ]];	#Files Exists and is a Directory
+		then
+
+			if [[ -w $HOME/$DB ]];
+			then
+
+			declare -a files
+			files=`ls $HOME/$DB`
+
+			if [[ ${files[@]} =~ [a-zA-Z] ]];
+				then
+				while true; 
+				do
+				read -rp $'You have Tables \n'"${files[@]}"$'\nin Your Database '"$DB"$', Are You Sure you want to drop Your Database [Y/N]: ' answer
+				case $answer in
+        			[Yy]* ) rm $HOME/$DB -r 
+					echo "Your $DB Has Been Deleted."; break;;
+        			[Nn]* ) echo "Your $DB Has Not Been Deleted."; break; exit;;
+        			* ) echo "Please answer Y or N.";;
+    				esac
+				done
+				
+			else
+			rmdir $HOME/$DB
+			echo "Your $DB Has Been Deleted."
+			fi
+	
+			else
+			echo "This Database is Not Allowed to be Deleted (You don't have Enough PErmissions to do This !!)"
+			fi
+
+	
+		else
+		echo "There is No Database Called $DB"
+		fi
+
+		else
+		echo "The $2 Database is Not Connected to be Used"
+		fi
+
+	else
+	echo "Error, There is No Database Mentioned"
+	fi
+
+
+	else 
+	echo "There is No Database Selected"
+	fi
+
+
+else 
+echo "Syntax Error: Unexpected token. 'database' keyword missing. "
+fi
