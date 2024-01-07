@@ -2,22 +2,47 @@
 
 if [[ $# -eq 0 ]];
 then
-echo "Syntax Error, Select Function Must Take at Least One Argument"
+echo "Syntax Error, Select Function Must Take at Least One Argument Representing Column to be Selected"
 else
 	if [[ $@ =~ ["from"] ]];
 	then
 
-		if [[ -e $HOME/$DB/${@: -1} ]];
+		if [[ -n $DB ]];
 		then
+
+			if [[ -d $HOME/$DB ]];
+			then
+
+			if [[ ${@: -1} != "from" ]];
+			then
+
+			if [[ -e $HOME/$DB/${@: -1} ]];
+			then
 
 			if [[ -r $HOME/$DB/${@: -1} ]];
 			then
+			headerline=$(head -1 $HOME/$DB/${@: -1})
+			IFS=',' read -a header_array <<< "$headerline"
+
+			if [[ $1 == "all" ]];
+			then
+
+			awk -F, -v columns="$header_array" 'BEGIN {split(columns, colnumsarr, ",");}
+                    {
+                        for (x in colnumsarr) {
+                            gsub(",", " ", $colnumsarr[x]);
+                            printf "%s ", $colnumsarr[x];
+                        }
+                        printf "\n";
+                    }' $HOME/$DB/${@: -1}
+
+			else
 
 				# Read the header line into a variable
-				headerline=$(head -1 $HOME/$DB/${@: -1})
+				
 
 				# Split the header into an array based on the delimiter (assuming it's a comma)
-				IFS=',' read -a header_array <<< "$headerline"
+				
 
 				# Initialize the variable
 				declare -i checkingcolumns=0
@@ -46,7 +71,7 @@ else
 
 					if [[ $checkingcolumns -eq 0 ]];
 					then
-						column_numbers=()
+					column_numbers=()
 					header=`head -1 $HOME/$DB/${@: -1}`
 					IFS=',' read -a head_array <<< "$header"
 					IFS=' ' read -a fields_array <<< "${@:1:$#-2}"
@@ -71,20 +96,32 @@ else
 
 
 				else 
-				echo "Error There is such a column not exist in that table"
+				echo "Error There is No Such a Column Exists in That Table"
 				fi
-			
+			fi
 
 			else
-			echo "Sorry, You don't have the permission to read from this Table"
+			echo "Sorry, You don't have the Permission to Read From This Table. "
 			fi
 
 	else
-	echo "There is No Such Database or Table"
+	echo "There is No Such Table Called ${@: -1} Exists. "
 	fi
 
+
+		else
+		echo "There is No Table Selected !! "
+		fi
+		else
+		echo "There is No Database called $DB Exists. "
+		fi
+
+		else
+		echo "Error, There is No Database Selected. "
+		fi
+
 	else 
-	echo "Syntax Error !!"
+	echo "Syntax Error: Unexpected Token. 'from' keyword missing."
 	fi
 
 fi
