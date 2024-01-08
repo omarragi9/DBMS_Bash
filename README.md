@@ -30,7 +30,14 @@ Features
 Usage
 --------
 
-First, download this repository, unzip it in the directory you want, and cd to that directory. Open a terminal in that directory and run this command to open our program.
+First, download this repository, unzip it in the directory you want, and cd to that directory. Open a terminal in that directory and run this command to give execute permission to all files in the project.
+
+```console
+[user@hostname ~]$ chmod u+x *
+```
+
+Then run this code to open our program.
+
 
 ```console
 [user@hostname ~]$ ./PenguinQuery
