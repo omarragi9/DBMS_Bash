@@ -1,7 +1,12 @@
 #!/usr/bin/bash
 shopt -s extglob
 source common_functions
-cd $HOME/DBMS_Project/Databases/omar
+if [[ $DB = '' ]]
+then
+	echo "Error!! You should connect to DB first"
+	exit
+fi
+cd $HOME/DBMS_Project/Databases/$DB
 #######################################################################################
 << COMMENT
 	Function to delte all rows "leave the table empty" except the columns names
@@ -19,7 +24,7 @@ function delete_all(){
 		exit
 	fi
 
-	sed -i '1!d' "$1"_data
+	sed -i '1!d' "$1"
 
 }
 
@@ -43,7 +48,7 @@ function delete_row(){
 
 	row=$(awk -v column=$column -v key=$last_argument '
 		BEGIN{
-			FS=":"
+			FS=","
 			res=0		# The index of the column that is in the condition
 			row=0		# The row number that will be deleted
 		}
@@ -70,22 +75,22 @@ function delete_row(){
 		}
 		
 
-	'  "$1"_data)
+	'  "$1")
 	
 	# "To check if the row value dosen't change so no record was found"
 	if [[ $row == 0 ]]
 	then
 		echo "There are no records in the database that match this condition."
 	else
-		sed -i "${row}d" "$1"_data
+		sed -i "${row}d" "$1"
 		echo "1 row deleted successfully"
 	fi
 
 }
 
 #######################################################################################
-delete_pattern="^delete\s+from\s+[a-zA-Z_]+\s+where [a-zA-Z_]+ = .+$"
-delete_all_pattern="^delete\s+all\s+from\s+[a-zA-Z_]+$"
+delete_pattern="^from\s+[a-zA-Z_]+\s+where [a-zA-Z_]+ = .+$"
+delete_all_pattern="^all\s+from\s+[a-zA-Z_]+$"
 user_input="$*"                 # The query entered by the user all in one line
 query_flag=0			# A flag to know if it's a delete or delete all
 # Check the user update query syntax
@@ -99,7 +104,7 @@ then
 	echo "Valid delete all statement: $user_input"
 	query_flag=1
 else
-	echo "Syntax error!!"
+	echo "Syntax Error: There are Missing Some Arguments. "
 	exit
 fi
 
@@ -108,9 +113,9 @@ last_argument="${!#}"		# The value of the condition that is entered by the user.
 
 if [[ $query_flag == 0 ]]
 then
-	delete_row $3 $5 $last_argument $column
+	delete_row $2 $4 $last_argument $column
 else
-	delete_all $4
+	delete_all $3
 fi
 
 

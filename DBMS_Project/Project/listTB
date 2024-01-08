@@ -1,0 +1,18 @@
+#!/usr/bin/bash
+
+
+if [[ $DB = '' ]]
+then
+	echo "Error!! You should connect to DB first"
+	exit
+
+else
+	if [[ $# -gt 1 ]] || [[ $# -eq 1 ]];
+	then
+		echo "Error: The ListTB Command doesn't take any arguments. "
+	else
+		echo "The Table you have are : "
+		ls -F $HOME/DBMS_Project/Databases/$DB | grep -v "/$"
+	fi
+fi
+

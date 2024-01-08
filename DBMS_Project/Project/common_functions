@@ -10,7 +10,7 @@ function check_dir(){
 	
 	if [[ -d "$1" ]]
 	then
-		echo "Databases folder is found"
+		echo "Databases command is running"
 	else
 		mkdir -p "$1"
 	fi
@@ -23,7 +23,7 @@ COMMENT
 
 function check_table(){
 
-	if [[ -f "$1"_data ]]
+	if [[ -f "$1" ]]
 	then 
 		return 1
 	else
@@ -39,7 +39,7 @@ function check_table(){
 COMMENT
 
 function check_column(){
-	if head -n1 "$2"_data | grep -q $1
+	if head -n1 "$2" | grep -q $1
 		then
 			return 1
 		else

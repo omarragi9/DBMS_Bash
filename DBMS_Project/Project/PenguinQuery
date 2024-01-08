@@ -1,0 +1,57 @@
+
+#!/bin/bash
+
+# Source the 'use' script
+
+
+# Display a welcome message
+echo "Welcome to PenguinQuery - The coolest place for your data! 🐧❄️"
+echo "Type 'help' to waddle through commands or 'exit' to slide back to the less icy world. 🌎"
+echo "Remember, here at PenguinQuery, every query is a snowball of fun! ☃️"
+
+# Function to display help
+function show_help() {
+    echo "Available commands:"
+    echo "  createDB  - Create a new database"
+    echo "  createTB  - Create a new table"
+    echo "  delete    - Delete a database or table"
+    echo "  select    - Select data from a table"
+    echo "  updateTB  - Update a table"
+    echo "  use       - Use a specific database"
+    echo "  connectDB - Connect to a database"
+    echo "  drop      - Drop a database"
+    echo "  dropTB    - Drop a table"
+    echo "  insert    - Insert data into a table"
+    echo "  listDB    - List all databases"
+    echo "  listTB    - List all tables"
+    echo "  which     - Show Current used database"
+    echo "  help      - Show this help message"
+    echo "  exit      - Exit PengQuery"
+}
+
+# Infinite loop to keep the script running
+while true; do
+    # Prompt user for input
+    echo -n "PenguinQuery> "
+    read input_command input_args
+
+    # Handle user input
+    case $input_command in
+        createDB) ./createDB $input_args ;;
+        createTB) ./createTB $input_args ;;
+        delete) ./delete $input_args ;;
+        select) ./Select $input_args ;;
+        updateTB) ./updateTB $input_args ;;
+        use) . ./use $input_args ;;
+        connectDB) ./connectDB $input_args ;;
+        drop) ./drop $input_args ;;
+        dropTB) ./dropTB $input_args ;;
+        insert) ./insert $input_args ;;
+        listDB) ./listDB $input_args ;;
+	listTB) ./listTB $input_args ;;
+        which) ./Which $input_args ;;
+        help) show_help ;;
+        exit) echo "Exiting PenguinQuery..."; break ;;
+        *) echo "Unknown command: $input_command. Type 'help' for assistance." ;;
+    esac
+done

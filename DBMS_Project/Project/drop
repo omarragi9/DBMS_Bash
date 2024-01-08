@@ -12,14 +12,14 @@ then
 		if [[ $2 == $DB ]];
 		then
 
-		if [[ -d $HOME/$DB ]];	#Files Exists and is a Directory
+		if [[ -d $HOME/DBMS_Project/Databases/$DB ]];	#Files Exists and is a Directory
 		then
 
-			if [[ -w $HOME/$DB ]];
+			if [[ -w $HOME/DBMS_Project/Databases/$DB ]];
 			then
 
 			declare -a files
-			files=`ls $HOME/$DB`
+			files=`ls $HOME/DBMS_Project/Databases/$DB`
 
 			if [[ ${files[@]} =~ [a-zA-Z] ]];
 				then
@@ -27,7 +27,7 @@ then
 				do
 				read -rp $'You have Tables \n'"${files[@]}"$'\nin Your Database '"$DB"$', Are You Sure you want to drop Your Database [Y/N]: ' answer
 				case $answer in
-        			[Yy]* ) rm $HOME/$DB -r 
+        			[Yy]* ) rm $HOME/DBMS_Project/Databases/$DB -r 
 					echo "Your $DB Has Been Deleted."; break;;
         			[Nn]* ) echo "Your $DB Has Not Been Deleted."; break; exit;;
         			* ) echo "Please answer Y or N.";;
@@ -35,7 +35,7 @@ then
 				done
 				
 			else
-			rmdir $HOME/$DB
+			rmdir $HOME/DBMS_Project/Databases/$DB
 			echo "Your $DB Has Been Deleted."
 			fi
 	

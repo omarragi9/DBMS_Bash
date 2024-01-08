@@ -1,0 +1,127 @@
+#! /usr/bin/bash
+
+if [[ $# -eq 0 ]];
+then
+echo "Syntax Error, Select Function Must Take at Least One Argument Representing Column to be Selected"
+else
+	if [[ $@ =~ ["from"] ]];
+	then
+
+		if [[ -n $DB ]];
+		then
+
+			if [[ -d $HOME/DBMS_Project/Databases/$DB ]];
+			then
+
+			if [[ ${@: -1} != "from" ]];
+			then
+
+			if [[ -e $HOME/DBMS_Project/Databases/$DB/${@: -1} ]];
+			then
+
+			if [[ -r $HOME/DBMS_Project/Databases/$DB/${@: -1} ]];
+			then
+			headerline=$(head -1 $HOME/DBMS_Project/Databases/$DB/${@: -1})
+			IFS=',' read -a header_array <<< "$headerline"
+
+			if [[ $1 == "all" ]];
+			then
+
+			awk -F, -v columns="$header_array" 'BEGIN {split(columns, colnumsarr, ",");}
+                    {
+                        for (x in colnumsarr) {
+                            gsub(",", " ", $colnumsarr[x]);
+                            printf "%s ", $colnumsarr[x];
+                        }
+                        printf "\n";
+                    }' $HOME/DBMS_Project/Databases/$DB/${@: -1}
+
+			else
+
+				# Read the header line into a variable
+				
+
+				# Split the header into an array based on the delimiter (assuming it's a comma)
+				
+
+				# Initialize the variable
+				declare -i checkingcolumns=0
+
+				
+				for val in "${@:1:$#-2}"; 		# Iterate over the arguments (excluding the last two)
+				do		    				
+    				val_found=0				# Assume val is not found initially
+	
+    					for field in "${header_array[@]}";		# Check if the value is in the header array 
+					do
+        					if [[ $val == $field ]]; 
+						then
+           					val_found=1
+            					break  # Only break out of the inner loop
+        					fi
+    					done
+
+   					if [[ $val_found -eq 0 ]]; 			# If val is not found, set checkingcolumns and break out of the outer loop
+					then
+        				checkingcolumns=1
+        				break
+   					fi
+				done
+
+
+					if [[ $checkingcolumns -eq 0 ]];
+					then
+					column_numbers=()
+					header=`head -1 $HOME/DBMS_Project/Databases/$DB/${@: -1}`
+					IFS=',' read -a head_array <<< "$header"
+					IFS=' ' read -a fields_array <<< "${@:1:$#-2}"
+
+						for name in "${fields_array[@]}";
+						do
+							for i in "${!head_array[@]}";
+							do
+							if [[ ${head_array[$i]} = $name ]];
+							then					
+							column_numbers+=($((i+1)))	
+							fi
+							done				
+						done				
+							awk_columns=$(IFS=,; echo "${column_numbers[*]}")
+							awk -F, -v columns="$awk_columns" '
+							BEGIN {split(columns, colnumsarr, ",");}
+								{for (x in colnumsarr) {
+        							printf "%s ", $colnumsarr[x];}
+    								printf "\n";
+								}' $HOME/DBMS_Project/Databases/$DB/${@: -1}
+
+
+				else 
+				echo "Error There is No Such a Column Exists in That Table"
+				fi
+			fi
+
+			else
+			echo "Sorry, You don't have the Permission to Read From This Table. "
+			fi
+
+	else
+	echo "There is No Such Table Called ${@: -1} Exists. "
+	fi
+
+
+		else
+		echo "There is No Table Selected !! "
+		fi
+		else
+		echo "There is No Database called $DB Exists. "
+		fi
+
+		else
+		echo "Error, There is No Database Selected. "
+		fi
+
+	else 
+	echo "Syntax Error: Unexpected Token. 'from' keyword missing."
+	fi
+
+fi

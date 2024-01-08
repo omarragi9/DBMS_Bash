@@ -3,7 +3,12 @@ shopt -s extglob
 #source connectDB
 #dbname=$(connectDB)
 source common_functions
-cd $HOME/DBMS_Project/Databases/omar
+if [[ $DB = '' ]]
+then
+	echo "Error : You Should Connect To Database First"
+	exit
+fi
+cd $HOME/DBMS_Project/Databases/$DB
 pwd
 
 << COMMENT
@@ -64,7 +69,7 @@ COMMENT
 
 function get_pk(){
 
-	pk=$(head -n1 $1 | cut -d: -f1)
+	pk=$(head -n1 $1 | cut -d, -f1)
 	declare -a pk_col_arr=()
 	declare -a pk_val_arr=()
 	#echo $pk
@@ -91,7 +96,7 @@ function get_pk(){
 			#echo $i
 			awk -v value="${pk_val_arr[i]}" '
 			BEGIN{
-				FS=":"
+				FS=","
 			}
 			{
 				if (value == $1){
@@ -118,7 +123,7 @@ COMMENT
 function substitute(){
 	awk -v columns="$1" -v values="$2" '
         BEGIN {
-            FS=":"
+            FS=","
 	    # Convert 'columns' string into an array
 	    num_columns = split(columns, columns_array, " ")
 
@@ -132,7 +137,7 @@ function substitute(){
         {
 ######################### get the index of each column of the users query #######################
 	if (NR == 1){
-	        split($0, header, ":")
+	        split($0, header, ",")
 		for (i = 1; i <= num_columns; i++) {
 	        for (j = 1; j <= NF; j++) {
         		if (columns_array[i] == header[j]) {
@@ -152,7 +157,7 @@ function substitute(){
 			num_up = 1		# flag to check if there the update done successfully
 		}
 	}
-	gsub(" " , ":")
+	gsub(" " , ",")
 	print $0
    
         }
@@ -179,16 +184,16 @@ function types_of_meta()
     then
         awk -v val_types="$2" -v columns="$3" '
         BEGIN{
-            FS="="
+            FS=":"
             n_val = split(val_types, val_arr, "")
             n_col = split(columns, col_arr, " ")
         }
         {
             for(i=1;i<=n_col;i++){
                 if (col_arr[i] == $1){
-                    if (val_arr[i] == 1 && $2 == "int") {
+                    if ((val_arr[i] == 1 && $2 == "int") || (val_arr[i] == 1 && $2 == "int-PK")) {
                         #print "Column " $1 " is of type int"
-                    } else if (val_arr[i] == 2 && $2 == "str") {
+                    } else if (val_arr[i] == 2 && $2 == "string") {
                         #print "Column " $1 " is of type string"
                     } else {
                         print "Error. Column " $1 " doesnt match expected type!!"
@@ -202,24 +207,24 @@ function types_of_meta()
         }
         ' "$1"
     else
-        echo "Meta data file not found!!"
+        echo "Meta Data File Not Found!!"
         return 1
     fi
 }
 ##################################################################	
-update_pattern="^update [a-zA-Z_]+ set [a-zA-Z_]+ = .+ where [a-zA-Z_]+ = .+$"
+update_pattern="^[a-zA-Z_]+ set [a-zA-Z_]+ = .+ where [a-zA-Z_]+ = .+$"
 user_input="$*"                 # The query entered by the user all in one line
 
 	# Check the user update query syntax
 if [[ $user_input =~ $update_pattern ]]; then
     echo "Valid update statement: $user_input"
 else
-    echo "Syntax error!!"
+    echo "Syntax error: There are Missing Some Passing Arguments. "
     exit	
 fi
 
 # Check if the table entered by user is not found
-check_table $2
+check_table $1
 temp=$? 		# temporary variable to check the return of the function
 
 if [[ $temp != 1 ]]
@@ -233,7 +238,7 @@ columns=$(grep -oP '\b\w+\b(?=\s*=)' <<< "$user_input")		# Extract the columns t
 # Check if any of the columns is not found
 for column in $columns
 do
-	check_column $column $2
+	check_column $column $1
 	temp=$?   	# temporary variable to check the return of the function
 	if [[ $temp != 1 ]]
 	then
@@ -251,13 +256,13 @@ do
 	val_types+=$?
 done
 
-index=$(head -n1 "${2}_data" | awk -F':' '{for(i=1;i<=NF;i++) print i " : " $i}')
+index=$(head -n1 "${1}" | awk -F':' '{for(i=1;i<=NF;i++) print i " , " $i}')
 #echo $index
 #echo "${index[*]}"
 #echo "${columns[*]}"
 #echo "${out[*]}"
 
-types_of_meta "$2"_meta "${val_types[*]}" "${columns[*]}" #Check if the data types of entered values matches the data types in the meta file 
+types_of_meta "$1"-meta "${val_types[*]}" "${columns[*]}" #Check if the data types of entered values matches the data types in the meta file 
 
 res_meta=$?			# A flag to check the return of the types of meta function
 if [[ $res_meta == 1 ]]
@@ -265,7 +270,7 @@ then
 	exit		# There is a data type mismatch
 fi
 
-get_pk "$2"_data "${columns[*]}" "${values[*]}" 
+get_pk "$1" "${columns[*]}" "${values[*]}" 
 res_pk=$?			# A flag to check the return of the pk search function
 if [[ $res_pk == 1 ]]
 then
@@ -273,7 +278,7 @@ then
 fi
 
 
-substitute "${columns[*]}" "${values[*]}" "$2"_data
+substitute "${columns[*]}" "${values[*]}" "$1"
 
 	
 ###########################################################################

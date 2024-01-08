@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+
+if [[ $DB = '' ]]
+then
+	echo "Error!! You should connect to DB first"
+	exit
+fi
+
+if [[ $# -eq 0 ]] || [[ $# -gt 1 ]];
+then
+echo "Error: dropTB command Must take one argument representing table name. "
+
+
+	else
+	
+	if [[ -e $HOME/DBMS_Project/Databases/$DB/$1 ]]
+	then
+	rm $HOME/DBMS_Project/Databases/$DB/$1
+	echo "Table $1 has been deleted successfully."
+	else
+	echo "Error!! $1 table not found."
+	fi
+fi

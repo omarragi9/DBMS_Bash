@@ -8,13 +8,13 @@ then
 		if [[ $DB != "" ]];
 		then
 
-			if [[ -e $HOME/$DB ]];
+			if [[ -e $HOME/DBMS_Project/Databases/$DB ]];
 			then
 		
-				if [[ -e $HOME/$DB/$2 ]];
+				if [[ -e $HOME/DBMS_Project/Databases/$DB/$2 ]];
 				then
 
-				if [[ $# > 3  ]];
+				if [[ $# ]];
 				then
 				if [[ "${@:3:$#}" =~ "values" ]];
 				then
@@ -23,7 +23,7 @@ then
 					declare -a values
 					declare -a heading
 					
-					heading=`head -1 $HOME/$DB/$2`
+					heading=`head -1 $HOME/DBMS_Project/Databases/$DB/$2`
 					IFS=',' read -ra header <<< $heading
 
 					for c in "${@:3:$#}";
@@ -93,8 +93,8 @@ then
 									declare -a output     # Array to store output values
 
 									# Set the file paths
-									data_file="$HOME/$DB/$2"   # Data file
-									meta_file="$HOME/$DB/$2-meta"  # Metadata file
+									data_file="$HOME/DBMS_Project/Databases/$DB/$2"   # Data file
+									meta_file="$HOME/DBMS_Project/Databases/$DB/$2-meta"  # Metadata file
 
 									# Initialize inputval with null
 									for va in "${header[@]}"; 
@@ -180,7 +180,8 @@ then
 									done
 
 									# Output result
-									IFS=','; echo "${output[*]}" >> $HOME/$DB/$2
+									IFS=','; echo "${output[*]}" >> $HOME/DBMS_Project/Databases/$DB/$2
+									echo "1 Row Inserted Successfully"
 									echo "Formatted Output: ${output[*]}"
 						
 							

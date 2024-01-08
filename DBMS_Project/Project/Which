@@ -1,0 +1,11 @@
+#! /usr/bin/bash
+
+if [[ $DB = '' ]]
+then
+	echo "You are not using any Databases. "
+	exit
+
+else
+		echo "You are using $DB database. "
+
+fi

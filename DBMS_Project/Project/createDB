@@ -42,7 +42,7 @@ function createDB(){
 	        check_exist_create "$1"
 	        ;;
 	    *)
-		echo "Error: Invalid input format."
+		echo "Error: CreateDB Command Must Take At Least One Argument Representing Database Name."
 	esac
 
 }
