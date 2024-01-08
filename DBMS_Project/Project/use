@@ -6,7 +6,7 @@ elif [[ $# -gt 1 ]];
 then 
 echo "Syntax Error, Use Function Takes Only One Argument !! "
 else
-	if [[ -d $HOME/DBMS_Project/Databases/$DB ]];
+	if [[ -d $HOME/DBMS_Project/Databases/$1 ]];
 	then
 		export DB=$1
 		echo "You are Using $1 Database"
