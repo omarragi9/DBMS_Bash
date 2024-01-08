@@ -7,12 +7,18 @@ then
 	exit
 
 else
-	if [[ $# -gt 1 ]] || [[ $# -eq 1 ]];
+	if [[ -d $HOME/DBMS_Project/Databases/$DB ]];
 	then
-		echo "Error: The ListTB Command doesn't take any arguments. "
+		
+		if [[ $# -gt 1 ]] || [[ $# -eq 1 ]];
+		then
+			echo "Error: The ListTB Command doesn't take any arguments. "
+		else
+			echo "The Table you have are : "
+			ls -F $HOME/DBMS_Project/Databases/$DB | grep -v "/$"
+		fi
 	else
-		echo "The Table you have are : "
-		ls -F $HOME/DBMS_Project/Databases/$DB | grep -v "/$"
+		echo "Error, There Is No Database called $DB"
 	fi
 fi
 
