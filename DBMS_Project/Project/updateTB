@@ -148,16 +148,18 @@ function substitute(){
 	       }
 	}
 #################################################################################################
-	len = length(output)
-	#print len
-	if ($output[len] == values_array[num_values]){
-		# Loop until the no num_columns - 1 to aviod the last column which is used in the condition
-		for (i = 1; i <= num_columns - 1 ; i++){
-			$output[i] = values_array[i]
-			num_up = 1		# flag to check if there the update done successfully
+	else{
+		len = length(output)
+		#print len
+		if ($output[len] == values_array[num_values]){
+			# Loop until the no num_columns - 1 to aviod the last column which is used in the condition
+			for (i = 1; i <= num_columns - 1 ; i++){
+				$output[i] = values_array[i]
+				num_up = 1		# flag to check if there the update done successfully
+			}
 		}
-	}
-	gsub(" " , ",")
+		gsub(" " , ",")
+		}
 	print $0
    
         }
