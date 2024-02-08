@@ -8,6 +8,18 @@
 echo "Welcome to PenguinQuery - The coolest place for your data! 🐧❄️"
 echo "Type 'help' to waddle through commands or 'exit' to slide back to the less icy world. 🌎"
 echo "Remember, here at PenguinQuery, every query is a snowball of fun! ☃️"
+echo '
+
+//////////////////////////////////////////////////////////////////////////
+//     ____                         _       ____                        //
+//    / __ \___  ____  ____ ___  __(_)___  / __ \__  _____  _______  __ //
+//   / /_/ / _ \/ __ \/ __ `/ / / / / __ \/ / / / / / / _ \/ ___/ / / / //
+//  / ____/  __/ / / / /_/ / /_/ / / / / / /_/ / /_/ /  __/ /  / /_/ /  //
+// /_/    \___/_/ /_/\__, /\__,_/_/_/ /_/\___\_\__,_/\___/_/   \__, /   //
+//                  /____/                                    /____/    //
+//////////////////////////////////////////////////////////////////////////
+
+'
 
 # Function to display help
 function show_help() {
